@@ -46,6 +46,19 @@ RCT_EXPORT_VIEW_PROPERTY(lineDashPattern, NSArray)
 // NOTE(lmr):
 // for now, onPress events for overlays will be left unimplemented. Seems it is possible with some work, but
 // it is difficult to achieve in both ios and android so I decided to leave it out.
-//RCT_EXPORT_VIEW_PROPERTY(onPress, RCTBubblingEventBlock)
+RCT_EXPORT_VIEW_PROPERTY(onPress, RCTBubblingEventBlock)
+
+- (void)_handleTap:(UITapGestureRecognizer *)recognizer {
+  NSLog(@"handleTap polygon");
+  AIRMapPolygon *polygon = (AIRMapPolygon *)recognizer.view;
+  if (!polygon) return;
+  // the actual marker got clicked
+  id event = @{
+               @"action": @"polygon-press"
+               };
+  
+  if (polygon.onPress) polygon.onPress(event);
+  
+}
 
 @end

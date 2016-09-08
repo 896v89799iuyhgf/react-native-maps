@@ -80,6 +80,7 @@ RCT_EXPORT_METHOD(hideCallout:(nonnull NSNumber *)reactTag)
 #pragma mark - Events
 
 - (void)_handleTap:(UITapGestureRecognizer *)recognizer {
+  NSLog(@"handleTap marker");
     AIRMapMarker *marker = (AIRMapMarker *)recognizer.view;
     if (!marker) return;
 

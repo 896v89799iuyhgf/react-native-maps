@@ -271,19 +271,61 @@ RCT_EXPORT_METHOD(takeSnapshot:(nonnull NSNumber *)reactTag
 
 - (void)handleMapTap:(UITapGestureRecognizer *)recognizer {
     AIRMap *map = (AIRMap *)recognizer.view;
+
+    CGPoint tapPoint = [recognizer locationInView:map];
+    CLLocationCoordinate2D tapCoordinate = [map convertPoint:tapPoint toCoordinateFromView:map];
+    MKCoordinateRegion tapCoordinateRection = MKCoordinateRegionMake(tapCoordinate, MKCoordinateSpanMake(0.000005, 0.000005));
+    MKMapRect touchMapRect = [self _MKMapRectForCoordinateRegion:tapCoordinateRection];
+  
+    MKMapPoint mapPoint = MKMapPointForCoordinate(tapCoordinate);
+    CGPoint mapPointAsCGP = CGPointMake(mapPoint.x, mapPoint.y);
+    
+    for (id<MKOverlay> overlay in map.overlays) {
+      if([overlay isKindOfClass:[AIRMapPolygon class]]){
+        AIRMapPolygon *polygon = (AIRMapPolygon*) overlay;
+        
+        CGMutablePathRef mpr = CGPathCreateMutable();
+        
+        //MKMapPoint *polygonPoints = polygon.points;
+        NSArray *polygonPoints = polygon.coordinates;
+        
+        for (int p=0; p < polygonPoints.count; p++){
+          AIRMapCoordinate *c = polygonPoints[p];
+          MKMapPoint mp = MKMapPointForCoordinate(c.coordinate);
+          if (p == 0)
+            CGPathMoveToPoint(mpr, NULL, mp.x, mp.y);
+          else
+            CGPathAddLineToPoint(mpr, NULL, mp.x, mp.y);
+        }
+        
+        if(CGPathContainsPoint(mpr , NULL, mapPointAsCGP, FALSE)){
+          id event = @{
+                       @"action": @"polygon-press",
+                       };
+          if (polygon.onPress) polygon.onPress(event);
+        }
+        
+        CGPathRelease(mpr);
+      }
+      if([overlay isKindOfClass:[AIRMapPolyline class]]){
+        AIRMapPolyline *polyline = (AIRMapPolyline*) overlay;
+        if([polyline intersectsMapRect:touchMapRect]){
+          id event = @{
+                       @"action": @"polyline-press",
+                       };
+          if (polyline.onPress) polyline.onPress(event);
+        }
+      }
+    }
     if (!map.onPress) return;
-
-    CGPoint touchPoint = [recognizer locationInView:map];
-    CLLocationCoordinate2D coord = [map convertPoint:touchPoint toCoordinateFromView:map];
-
     map.onPress(@{
             @"coordinate": @{
-                    @"latitude": @(coord.latitude),
-                    @"longitude": @(coord.longitude),
+                    @"latitude": @(tapCoordinate.latitude),
+                    @"longitude": @(tapCoordinate.longitude),
             },
             @"position": @{
-                    @"x": @(touchPoint.x),
-                    @"y": @(touchPoint.y),
+                    @"x": @(tapPoint.x),
+                    @"y": @(tapPoint.y),
             },
     });
 
@@ -568,6 +610,17 @@ static int kDragCenterContext;
                 }
         });
     }
+}
+
+- (MKMapRect)_MKMapRectForCoordinateRegion:(MKCoordinateRegion)region
+{
+  MKMapPoint a = MKMapPointForCoordinate(CLLocationCoordinate2DMake(
+                                                                    region.center.latitude + region.span.latitudeDelta / 2,
+                                                                    region.center.longitude - region.span.longitudeDelta / 2));
+  MKMapPoint b = MKMapPointForCoordinate(CLLocationCoordinate2DMake(
+                                                                    region.center.latitude - region.span.latitudeDelta / 2,
+                                                                    region.center.longitude + region.span.longitudeDelta / 2));
+  return MKMapRectMake(MIN(a.x,b.x), MIN(a.y,b.y), ABS(a.x-b.x), ABS(a.y-b.y));
 }
 
 @end

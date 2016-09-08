@@ -16,6 +16,7 @@ import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.View.OnLayoutChangeListener;
 import android.content.Context;
+import android.util.Log;
 
 import android.view.ViewGroup;
 import android.widget.ImageView;
@@ -173,6 +174,26 @@ public class AirMapView extends MapView implements GoogleMap.InfoWindowAdapter,
                 manager.pushEvent(markerMap.get(marker), "onPress", event);
 
                 return false; // returning false opens the callout window, if possible
+            }
+        });
+
+        map.setOnPolygonClickListener(new GoogleMap.OnPolygonClickListener() {
+            @Override
+            public void onPolygonClick(Polygon polygon) {
+                WritableMap event;
+                event = makeClickEventData(polygon.getPoints().get(0));
+                event.putString("action", "polygon-press");
+                manager.pushEvent(polygonMap.get(polygon), "onPress", event);
+            }
+        });
+
+        map.setOnPolylineClickListener(new GoogleMap.OnPolylineClickListener() {
+            @Override
+            public void onPolylineClick(Polyline polyline) {
+                WritableMap event;
+                event = makeClickEventData(polyline.getPoints().get(0));
+                event.putString("action", "polyline-press");
+                manager.pushEvent(polylineMap.get(polyline), "onPress", event);
             }
         });
 

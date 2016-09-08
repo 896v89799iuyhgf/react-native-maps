@@ -72,6 +72,10 @@
         if (_pinView == nil) {
             _pinView = [[MKPinAnnotationView alloc] initWithAnnotation:self reuseIdentifier: nil];
             _pinView.annotation = self;
+          _pinView.center = CGPointMake(16, 20); // make position/size of AIRMapMarker to match the pin
+          self.centerOffset = CGPointMake(-16, -20);
+          self.frame = CGRectMake(self.frame.origin.x, self.frame.origin.y, 32, 39);  // TODO: remove hard-coded size
+          [self addSubview:(UIView *) _pinView]; // add pin as child of marker and return marker itself
         }
 
         _pinView.draggable = self.draggable;
@@ -83,7 +87,7 @@
             _pinView.pinTintColor = self.pinColor;
         }
 
-        return _pinView;
+        return self;
     } else {
         // If it has subviews, it means we are wanting to render a custom marker with arbitrary react views.
         // if it has a non-null image, it means we want to render a custom marker with the image.
